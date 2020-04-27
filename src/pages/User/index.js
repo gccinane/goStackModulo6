@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import api from '../services/api';
+import api from '../../services/api';
+import { ActivityIndicator } from 'react-native';
 
 import {
   Container,
@@ -24,6 +25,7 @@ export default class User extends Component {
           name: PropTypes.string,
           login: PropTypes.string,
           bio: PropTypes.string,
+          avatar: PropTypes.string,
         }),
       }),
     }).isRequired,
@@ -35,15 +37,50 @@ export default class User extends Component {
 
   state = {
     stars: [],
+    loading: false,
+    page: 1,
+    refreshing: false,
   };
 
-  async componentDidMount() {
+  componentDidMount() {
+    this.load();
+  }
+
+  async loadMore() {
+    const { page } = this.state;
+    await this.setState({ page: page + 1 });
+    this.load();
+  }
+
+  handleNavigate = repository => {
+    const { navigation } = this.props;
+    console.tron.log(repository)
+    console.tron.log('deus')
+
+    this.props.navigation.navigate('Repository', { repository });
+  };
+
+  refreshList() {
+    this.setState({ page: 1, refreshing: true, stars: [] });
+    this.load();
+  }
+
+  async load() {
     const { route } = this.props;
+    const { stars, page } = this.state;
     const user = route.params.user;
-
-    const res = await api.get(`users/${user.login}/starred`);
-
-    this.setState({ stars: res.data });
+    page === 1 && this.setState({ loading: true });
+    const res = await api.get(`users/${user.login}/starred`, {
+      params: {
+        per_page: 20,
+        page: page,
+      },
+    });
+    this.setState(
+      page > 1
+        ? { stars: [...stars, ...res.data], loading: false }
+        : { stars: res.data, loading: false, refreshing: false }
+    );
   }
 
   setDefaultOptions() {
@@ -56,7 +93,7 @@ export default class User extends Component {
   render() {
     this.setDefaultOptions();
     const { route } = this.props;
-    const { stars } = this.state;
+    const { stars, loading, refreshing } = this.state;
 
     const user = route.params.user;
     return (
@@ -67,19 +104,27 @@ export default class User extends Component {
           <Bio>{user.bio}</Bio>
         </Header>
 
-        <Stars
-          data={stars}
-          keyExtractor={(star) => String(star.id)}
-          renderItem={({ item }) => (
-            <Starred>
-              <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
-              <Info>
-                <Title>{item.name}</Title>
-                <Author>{item.owner.login}</Author>
-              </Info>
-            </Starred>
+        {loading ? (
+          <ActivityIndicator />
+        ) : (
+            <Stars
+              data={stars}
+              keyExtractor={(star) => String(star.id)}
+              refreshing={refreshing}
+              onRefresh={() => this.refreshList()}
+              onEndReachedThreshold={0.2}
+              onEndReached={() => this.loadMore()}
+              renderItem={({ item }) => (
+                <Starred onPress={() => this.handleNavigate(item)}>
+                  <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
+                  <Info>
+                    <Title>{item.name}</Title>
+                    <Author>{item.owner.login}</Author>
+                  </Info>
+                </Starred>
+              )}
+            />
           )}
-        />
       </Container>
     );
   }

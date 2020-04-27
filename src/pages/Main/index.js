@@ -16,7 +16,7 @@ import {
   ProfileButton,
   ProfileButtonText,
 } from './styles';
-import api from '../services/api';
+import api from '../../services/api';
 export default class Main extends Component {
   static propTypes = {
     navigation: PropTypes.shape({
@@ -68,7 +68,6 @@ export default class Main extends Component {
 
   handleNavigate = (user) => {
     const { navigation } = this.props;
-
     navigation.navigate('User', { user });
   };
 

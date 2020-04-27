@@ -2,6 +2,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import Main from './pages/Main';
 import User from './pages/User';
+import Repository from './pages/Repository';
 const Stack = createStackNavigator();
 
 export default function Routes() {
@@ -16,6 +17,7 @@ export default function Routes() {
     >
       <Stack.Screen name="Main" component={Main} />
       <Stack.Screen name="User" component={User} />
+      <Stack.Screen name="Repository" component={Repository} />
     </Stack.Navigator>
   );
 }
